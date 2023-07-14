@@ -30,6 +30,25 @@ Copyright (C) 2019 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ```
+
+## Windows setup
+### One time dependency setup
+1. Install `arm-none-eabi-gcc --version` [download from](https://developer.arm.com/downloads/-/gnu-rm). Probably latest version will work but tested on `arm-none-eabi-gcc --version` arm-none-eabi-gcc.exe (GNU Arm Embedded Toolchain 10.3-2021.10) 10.3.1 20210824 (release)`
+2. Install `make`
+  2.1. Open Powershell as admin (must be admin)
+  2.2. Run `choco install make`. After that **make** can be used without admin
+1. Fully close and reopen vscode and terminal that you gonna use for building
+
+### Build project on Windows
+
+1. [Optional] You can increment app version in file `Program\APP\Main.c` around line 86 `u8  APP_VERSION[12] = { "v20.11.27" };`
+2. Open Powershell terminal.
+3. Navigate to the project folder e.g. with command `cd C:\GitHub\DS213_ECHO` inside which `Makefile` is located
+4. Run command `make`. This will create new `build` folder with build files
+5. Only file you need is `build/DS213_ECHO.hex` 
+6. Then follow firmware update instructions as usual but use your new .hex file
+
+
 ### on Linux(Ubuntu 18.04):
 
 ```
