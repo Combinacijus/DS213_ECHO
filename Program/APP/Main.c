@@ -83,7 +83,7 @@
 
 
 HwDrvDef  Hw;
-u8  APP_VERSION[12] = { "v20.11.26" };
+u8  APP_VERSION[12] = { "v20.11.27" };
 u8  PwrDownSt = 0;
 
 /*******************************************************************************
@@ -173,8 +173,8 @@ int main(void)
         if(~nKeySt & K4){                                     // Press K1 while holding K4
           u32 r = Snapshot();                                 // Save the current screenshot
           RowPosi(Menu[TM2].X0, Menu[TM2].Y0);
-          if(r == OK) AddStr(TXT2C, CHAR, " Saveing OK  ");
-          else        AddStr(WARNG, CHAR, " Saveing Err ");
+          if(r == OK) AddStr(TXT2C, CHAR, " ScrSave OK  ");
+          else        AddStr(WARNG, CHAR, " ScrSave Err ");
           Delay_mS(2000);
           Menu[TM2].Flg |= UPDT;                              // Set the update flag
         } else {                                              // Press K1 alone
@@ -187,8 +187,8 @@ int main(void)
         if(~nKeySt & K4){                                     // Press K2 while holding K4
           u32 r = SaveParam();                                // Save the current setting parameters
           RowPosi(Menu[TM2].X0, Menu[TM2].Y0);
-          if(r == OK) AddStr(TXT2C, CHAR, " File Saved  ");
-          else        AddStr(WARNG, CHAR, " Save Error  ");
+          if(r == OK) AddStr(TXT2C, CHAR, " ConfigSaved ");
+          else        AddStr(WARNG, CHAR, " CfgSave Err ");
           Delay_mS(2000);
           Menu[TM2].Flg |= UPDT;                              // Restore TM2 display items
         } else {                                              // Press K2 alone

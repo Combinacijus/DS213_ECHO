@@ -185,7 +185,7 @@ u8 Snapshot(void)
         i = 0;
         if(y > 12){
           RowPosi(Menu[TM2].X0, Menu[TM2].Y0);
-          PrintStr(TXT2C, CHAR, " Saveing     ");
+          PrintStr(TXT2C, CHAR, " Screenshot  ");
         }
         if(y > 12) PrintClk(372, 0, (k++ >> 1)& 3);            // Progress indicator
       }
