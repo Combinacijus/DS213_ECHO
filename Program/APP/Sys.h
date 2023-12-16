@@ -82,7 +82,7 @@
 
   extern vu16 BeepCnt, Dly_mS, LED_Pwm;//, TestCnt
   extern u8   Flashing, PwrDownEn, DiskBuf[];
-  extern u16  Fps, nKeySt, KeyAct, Vsum; //SleepEn,
+  extern u16  Fps, nKeySt, KeyAct, Vbat; //SleepEn,
   extern uc16 Wait[];
   extern u32  SectorSize;
   extern u8 sigIntProbe;

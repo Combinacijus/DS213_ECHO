@@ -34,7 +34,8 @@ void Y_Measure(void)
   MeasurY[CH_C][MAX] = Yn[CH_C]+C_AMPL, MeasurY[CH_C][MIN] = Yn[CH_C];
   MeasurY[CH_D][MAX] = Yn[CH_D]+D_AMPL, MeasurY[CH_D][MIN] = Yn[CH_D];
 
-  for(u32 i = X_BASE; i < X_SIZE; i++){
+  // Update maximum and minimum values for channels A and B
+  for(u32 i = X_BASE; i < X_SIZE; i++){ // Loop through the waveform data for statistical measurement
     if(MeasurY[CH_A][MAX] < *p) MeasurY[CH_A][MAX] = *p;
     if(MeasurY[CH_A][MIN] > *p) MeasurY[CH_A][MIN] = *p;
     SumA += *p++;
@@ -50,12 +51,15 @@ void Y_Measure(void)
     MeasurY[CH_A][MAX] = MeasurY[CH_A][MAX]-Yn[CH_A];
     MeasurY[CH_A][MIN] = MeasurY[CH_A][MIN]-Yn[CH_A];
   }
+
+  // Calculate peak-to-peak (VPP) and average (AVG) values for channels A and B
   MeasurY[CH_A][VPP] = MeasurY[CH_A][MAX]-MeasurY[CH_A][MIN];
   MeasurY[CH_A][AVG] = SumA/X_SIZE-Yn[CH_A];
 
   MeasurY[CH_B][ACT]  = (MeasurY[CH_B][MAX] < Y_SIZE) ? 1 : 0;
   MeasurY[CH_B][ACT] &= (MeasurY[CH_B][MIN] > Y_BASE) ? 1 : 0;
 
+  // Similar calculations for channel B
   if(MeasurY[CH_B][ACT]){
     MeasurY[CH_B][MAX] = MeasurY[CH_B][MAX]-Yn[CH_B];
     MeasurY[CH_B][MIN] = MeasurY[CH_B][MIN]-Yn[CH_B];
@@ -63,11 +67,13 @@ void Y_Measure(void)
   MeasurY[CH_B][VPP] = MeasurY[CH_B][MAX]-MeasurY[CH_B][MIN];
   MeasurY[CH_B][AVG] = SumB/X_SIZE-Yn[CH_B];
 
+  // Calculate vertical threshold values for channels A and B
   MeasurY[CH_A][VTH] = Vt[CH_A]-Yn[CH_A];
   MeasurY[CH_B][VTH] = Vt[CH_B]-Yn[CH_B];
 
+  // Calculate delta and average values for additional measurements
   MeasurY[0][D_V]    = Menu[V_1].Val-Menu[V_2].Val;
-  MeasurY[0][B_V]    = Vsum/8;
+  MeasurY[0][B_V]    = Vbat/8;
 }
 
 /*******************************************************************************

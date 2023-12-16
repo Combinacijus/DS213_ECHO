@@ -127,7 +127,9 @@ u32  PopBuf[1500];             // Pop Window Display buffer
 u16  Nx0, Ny0;                 // Pop Window Current display position of internal information
 u16  Bx1, Bx2, By1, By2;       // Pop Window Start position in the main screen display area
 u8   YnHide[4] = {0, 0, 0, 0}; // Track1~4Trace display/blanking sign
-u8   Track[(X_SIZE+1)*4];      // Trajectory buffer: i+0,i+1,i+2,i+3, 为 1～4 Track data
+
+// Track extra size of X_SIZE+1 is used to have a stop value of 0xFF to indicate end of array
+u8   Track[(X_SIZE+1)*4];      // Track buffer: i+0,i+1,i+2,i+3, for 1 to 4 Track data: [ch1_1, ch2_1, ch3_1, ch4_1, ch1_2, ch2_2, ch3_2, ...)
 u8   TrackRoll[(X_SIZE+1)*4];  // Scrolling track cache:
 
 /*******************************************************************************
@@ -407,69 +409,78 @@ void UpdateTag(void)
 /*******************************************************************************
 
 *******************************************************************************/
+// Display waveform on LCD by drawing pixels into a column buffer 
 void DisplayWaveForm(void)
 {
-  u16 Buf0[210], Buf1[210];
-  u16 T0P = (Menu[T_0].Val-Menu[XNP].Val)*30;                // T0 Marking position
-  u16 T1P = Menu[T_1].Val, T2P = Menu[T_2].Val;              // T1,T2 Cursor position
-  u16 V1P = Menu[V_1].Val, V2P = Menu[V_2].Val;              // V1,V2 Cursor position
-  u16 VtS = Menu[V_T].Src;                                   // Vt source
-  u16 VtP = Vt[VtS];                                         // Vt Marking position
-  u16 VtC = Palette[VtS];                                    // Vt Source color
-  u16 GrC = Palette[GRIDC];                                  // Grid color
-  u16 BgC = Palette[BLANK];                                  // background color
-  u16 CsC = Palette[CURSR];                                  // V/T1~2 Cursor color
+  u16 Buf0[Y_SIZE+10], Buf1[Y_SIZE+10];          // Pixel buffers for double buffering columns. Unclear why +10
+  u16 T0P = (Menu[T_0].Val-Menu[XNP].Val)*30;    // T0 Marking position
+  u16 T1P = Menu[T_1].Val, T2P = Menu[T_2].Val;  // T1,T2 Cursor position
+  u16 V1P = Menu[V_1].Val, V2P = Menu[V_2].Val;  // V1,V2 Cursor position
+  u16 VtS = Menu[V_T].Src;                       // Vt source
+  u16 VtP = Vt[VtS];                             // Vt Marking position
+  u16 VtC = Palette[VtS];                        // Vt Source color
+  u16 GrC = Palette[GRIDC];                      // Grid color
+  u16 BgC = Palette[BLANK];                      // background color
+  u16 CsC = Palette[CURSR];                      // V/T1~2 Cursor color
 
-  u16 T0F = Menu[T_0].Flg & INVR;                            // T0 Marking display signs
-  u16 T1F = Menu[T_1].Flg & INVR;                            // T1 Cursor display flag
-  u16 T2F = Menu[T_2].Flg & INVR;                            // T1 Cursor display flag
-  u16 V1F = Menu[V_1].Flg & INVR;                            // V1 Cursor display flag
-  u16 V2F = Menu[V_2].Flg & INVR;                            // V2 Cursor display flag
-  u16 VtF = Menu[V_T].Flg & INVR;                            // Vt Cursor display flag
+  u16 T0F = Menu[T_0].Flg & INVR;                // T0 Marking display signs
+  u16 T1F = Menu[T_1].Flg & INVR;                // T1 Cursor display flag
+  u16 T2F = Menu[T_2].Flg & INVR;                // T1 Cursor display flag
+  u16 V1F = Menu[V_1].Flg & INVR;                // V1 Cursor display flag
+  u16 V2F = Menu[V_2].Flg & INVR;                // V2 Cursor display flag
+  u16 VtF = Menu[V_T].Flg & INVR;                // Vt Cursor display flag
 
   FpsCnt++;
-  LCD_WrBlock(MIN_X, MIN_Y, MIN_X+X_SIZE, MIN_Y+Y_SIZE);          //Set display area
-  for(u32 Col = X_BASE; Col <= X_SIZE; Col++){
-    u16* p = (Col & 1) ? Buf1 : Buf0;                             // Switch buffer
-    u32* p32 = (u32*)p;
-    u16 Fill = (Col == X_BASE || Col == X_SIZE) ? GrC : BgC;
+  LCD_WrBlock(MIN_X, MIN_Y, MIN_X+X_SIZE, MIN_Y+Y_SIZE);          // Set display area
+  for(u32 Col = X_BASE; Col <= X_SIZE; Col++){                    // Iterate through each column
+    u16* p = (Col & 1) ? Buf1 : Buf0;                             // Switch pixel buffer
+
+    u32* p32 = (u32*)p;                                           // u32 for quicker background color filling
+    u16 Fill = (Col == X_BASE || Col == X_SIZE) ? GrC : BgC;      
     for(u32 i = X_BASE; i <= Y_SIZE/2; i++) p32[i] = Fill;        // Fill background color
+
     p[Y_SIZE] = GrC, p[Y_BASE] = GrC;                             // Draw upper and lower borders
     if(Col%30 == 0) for(u32 y = 5;  y < 200; y +=  5) p[y] = GrC; // Draw vertical lines
     if(Col% 6 == 0) for(u32 x = 25; x < 200; x += 25) p[x] = GrC; // Draw horizontal lines
 
     if(Col != X_BASE && Col != X_SIZE){
-      for(u32 n = 0; n < 4; n++){
-        u32 m = Col*4+n;
-        u32 Max[4], Min[4];
+      for(u32 ch = 0; ch < 4; ch++){
+        u32 m = Col*4+ch;        // Sample position
+        const u32 m_prev = m-4;  // Previous sample
+        u32 Max[4], Min[4];      // Min Max only comparing current and previous sample (for vertical line drawing)
         if(Track[m] != 0xFF){                                     // Non-blanking state
-          Max[n] = Track[m], Min[n] = Track[m];
-          if(Track[m] > Y_BASE && Track[m] < Y_SIZE){
-            if(Track[m-4] < Y_BASE+1)
-              Min[n] = Y_BASE+1;
-            else if(Track[m-4] > Y_SIZE-1 && Track[m-4] != 0xFF)
-              Max[n] = Y_SIZE-1;
-            else if(Track[m] > Track[m-4])
-              Min[n] = Track[m-4];
-            else if(Track[m] < Track[m-4] && Track[m-4] != 0xFF)
-              Max[n] = Track[m-4];
-            if(Min[n] == Max[n]){
-              if(Min[n] > Y_BASE+1) Min[n]--;
-              if(Max[n] < Y_SIZE-1) Max[n]++;                     // Bold horizontal line
-            }
+
+          // Find min and max values for each channel
+          Max[ch] = Track[m], Min[ch] = Track[m];
+          if(Track[m] > Y_BASE && Track[m] < Y_SIZE){             // If signal value on screen
+            if(Track[m_prev] < Y_BASE+1)
+              Min[ch] = Y_BASE+1;
+            else if(Track[m_prev] > Y_SIZE-1 && Track[m_prev] != 0xFF)
+              Max[ch] = Y_SIZE-1;
+            else if(Track[m] > Track[m_prev])
+              Min[ch] = Track[m_prev];
+            else if(Track[m] < Track[m_prev] && Track[m_prev] != 0xFF)
+              Max[ch] = Track[m_prev];
+            
+            // Bold horizontal line for constant no signal
+            // if(Min[ch] == Max[ch]){
+            //   if(Min[ch] > Y_BASE+1) Min[ch]--;
+            //   if(Max[ch] < Y_SIZE-1) Max[ch]++;                     
+            // }
+
           } else {                                                // Transboundary processing,  Pay attention to this when modifying the interface
-            if(Track[m] == Y_BASE && Track[m-4] > Y_BASE){
-              Min[n] = Track[m-4], Max[n] = Track[m-4];
+            if(Track[m] == Y_BASE && Track[m_prev] > Y_BASE){
+              Min[ch] = Track[m_prev], Max[ch] = Track[m_prev];
             }
-            if(Track[m] >= Y_SIZE && Track[m-4] < Y_SIZE){
-              Min[n] = Track[m-4], Max[n] = Track[m-4];
+            if(Track[m] >= Y_SIZE && Track[m_prev] < Y_SIZE){
+              Min[ch] = Track[m_prev], Max[ch] = Track[m_prev];
             }
           }
-          u16 TrkC = Palette[n];
-          if((Max[n]-Min[n]) > 5) TrkC &= 0xBDF7;                 // Brightness adjustment
-          if(Col != X_BASE && Col != X_SIZE && !YnHide[n]){
-            for(u32 y = Min[n]; y <= Max[n]; y++){
-              if(Min[n] > Y_BASE && Max[n] < Y_SIZE) p[y] |= TrkC;// Draw waveform trace
+          u16 TrkC = Palette[ch];
+          if((Max[ch]-Min[ch]) > 5) TrkC &= 0xBDF7;                 // Brightness adjustment
+          if(Col != X_BASE && Col != X_SIZE && !YnHide[ch]){
+            for(u32 y = Min[ch]; y <= Max[ch]; y++){                // Draw vertical line between two samples (so it's continuous line)
+              if(Min[ch] > Y_BASE && Max[ch] < Y_SIZE) p[y] |= TrkC;// Draw waveform trace
             }
           }
         }

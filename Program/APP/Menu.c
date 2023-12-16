@@ -259,18 +259,18 @@ void UpdtMainMenu(void)
       u32 MxEn = (i >= TM2 && i <= VM1) ? 1 : 0;
       u32 Mssk = (Indx == D_V || Indx == B_V || Indx == D_T || Indx == FPS) ? MxEn : 0;
       u32 Ch_N = (Mssk) ? 0 : Menu[i].Src;
-      u32 Numb = (Mssk) ? TXT1C : Ch_N;                // Change the display color number
+      u32 ColorNo = (Mssk) ? TXT1C : Ch_N;             // Change the display color number
       u32 Slct = (Flag & SLCT) ? 0x08 : 0x00;
       u8* pStr = (u8*)Menu[i].STR+Indx*Slct;           // String pointer
       u32 Mode = (Flag & INVR) ? INVR : CHAR;
-      if(Numb == N_2_W) Numb = Indx ? NORMO : WARNG;   // Automatically switch warning colors
-      PrintStr(Numb, Mode, pStr);                      // Display the standard string
+      if(ColorNo == N_2_W) ColorNo = Indx ? NORMO : WARNG;   // Automatically switch warning colors
+      PrintStr(ColorNo, Mode, pStr);                      // Display the standard string with background and foreground. Display selectable main screen elements
 
 //===========================Refresh the two information boxes in the lower left corner below============================
       if(i == VM1 || i == VM2){
         u32 ChAB = Ch_N & 1;
         if(!MeasurY[ChAB][ACT] && Indx <= AVG)
-          AddStr(Numb, Mode, " ----- ");
+          AddStr(ColorNo, Mode, " ----- ");
         else {
           u32 Yrange = Y_SCALE[Menu[ChAB ? RNB : RNA].Val];
           u32 Yscale = (Indx == B_V) ? 1000 : Yrange;
@@ -287,14 +287,14 @@ void UpdtMainMenu(void)
           }
 
           Int32String_sign(&Num, Ymeter);               // Signed string of three significant digits
-          AddStr(Numb, Mode, Num.str);                  // Display measurement value
-          AddStr(Numb, Mode, (u8*)&V_UNIT[Num.decPos]); // Display voltage measurement dimension
+          AddStr(ColorNo, Mode, Num.str);                  // Display measurement value
+          AddStr(ColorNo, Mode, (u8*)&V_UNIT[Num.decPos]); // Display voltage measurement dimension
         }
 //=========Display the contents of the two boxes in the lower right corner=============
       } else if(i == TM1 || i == TM2){
         u16* pS = &MeasurX[Ch_N][Indx];
         if(*pS == 0)
-          AddStr(Numb, Mode, " ----- ");
+          AddStr(ColorNo, Mode, " ----- ");
         else{
           u32  Cb = Menu[TIM].Val;                          // Curr T_Base
           u32  Ts = (*pS)*TK[Cb];
@@ -333,8 +333,8 @@ void UpdtMainMenu(void)
             default:
               break;
           }
-          AddStr(Numb, Mode, Num.str);                      // Display measurement value
-          AddStr(Numb, Mode, (u8*)pM);                      // Display measurement dimension
+          AddStr(ColorNo, Mode, Num.str);                      // Display measurement value
+          AddStr(ColorNo, Mode, (u8*)pM);                      // Display measurement dimension
         }
       }
     }

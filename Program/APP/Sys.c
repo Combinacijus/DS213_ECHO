@@ -61,7 +61,7 @@ u8   Flashing, PwrDownEn = 1;
 vu16 Dly_mS, Delay_Cnt, Sec_Cnt, BeepCnt, PD_Cnt = 300;// = LED_PWM_MAX;
 u16  Fps, FpsCnt, nKeySt;
 u16  WfBuf[100];                    // Output waveform data buffer
-u16  KeyAct = 0, Vsum = 3600*8;
+u16  KeyAct = 0, Vbat = 3600*8;
 u8   sigIntProbe = 0;
 
 /*******************************************************************************
@@ -133,10 +133,10 @@ void SysInt(void)
       }
       if((Pop[SPDT].Val != 0) && (PD_Cnt == 0)){         // Standby breathing light control
         if(LED_Dir == 0){
-          if(LED_Pwm < LED_PWM_MAX-5) LED_Pwm += 5;        // Brightness increase
+          if(LED_Pwm < LED_PWM_MAX-5) LED_Pwm += 5;      // Brightness increase
           else                        LED_Dir  = 1;
         } else {
-          if(LED_Pwm > LED_PWM_MIN+5) LED_Pwm -= 5;        // Diminished brightness
+          if(LED_Pwm > LED_PWM_MIN+5) LED_Pwm -= 5;      // Diminished brightness
           else                        LED_Dir  = 0;
         }
         *Hw.pPwm_LED = LED_Pwm;
@@ -144,12 +144,12 @@ void SysInt(void)
       if(CursorCnt++ >= 12){                             // 12*20mS = 240mS Flashing
         CursorCnt = 0;
         Flashing = (Flashing) ? 0 : 1;
-        Vsum = Vsum-Vsum/8+*Hw.pAdc_Vbty*375/256;        // 8 Order smoothing filter
-        if(Vsum > 3800*8)      Menu[BTY].Val = 4;
-        else if(Vsum > 3600*8) Menu[BTY].Val = 3;
-        else if(Vsum > 3400*8) Menu[BTY].Val = 2;
-        else if(Vsum > 3200*8) Menu[BTY].Val = 1;
-//      else if(Vsum > 3000*8) Menu[BTY].Val = 0;
+        Vbat = Vbat-Vbat/8+*Hw.pAdc_Vbty*375/256;        // 8 Order smoothing filter
+        if(Vbat > 3800*8)      Menu[BTY].Val = 4;
+        else if(Vbat > 3600*8) Menu[BTY].Val = 3;
+        else if(Vbat > 3400*8) Menu[BTY].Val = 2;
+        else if(Vbat > 3200*8) Menu[BTY].Val = 1;
+//      else if(Vbat > 3000*8) Menu[BTY].Val = 0;
         else *Hw.pOut_PEn = 0;                           // Shut down when battery is low
         Menu[BTY].Flg |= UPDT;                           // Refresh battery indicator
       }

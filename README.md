@@ -1,17 +1,13 @@
 # DS213_ECHO
 
-This is a customized DS213 APP firmware with Roll Mode support. Based on the official app
-firmware v1.27, and fixed some bugs.
+This is a customized DS213 APP firmware with Roll Mode support (and other features). Based on the official app firmware v1.27, and fixed some bugs.
 
 ## What is [Roll Mode](https://www.sweetwater.com/insync/roll-mode/)?
 
-On an oscilloscope, roll mode is a method of displaying acquired waveform data without
-waiting for the complete waveform record. For example, if a sweep was 10 divisions long
-with a rate of one second per division, and roll mode wasn’t available, it would take 10
-seconds to fill the waveform record. But using roll mode, the oscilloscope will immediately
+On an oscilloscope, roll mode is a method of displaying acquired waveform data without waiting for the complete waveform record. For example, if a sweep was 10 divisions long with a rate of one second per division, and roll mode wasn’t available, it would take 10 seconds to fill the waveform record. But using roll mode, the oscilloscope will immediately
 begin displaying results rather than waiting the full 10 seconds.
 
-## Video Demo
+## Roll Mode Video Demo
 
 - [Youtube](https://youtu.be/iGE-QNMqRk0)
 - [Bilibili](https://www.bilibili.com/video/BV1QA411x7YX)
@@ -20,7 +16,7 @@ begin displaying results rather than waiting the full 10 seconds.
 
 The firmware is built on GNU Arm Embedded Toolchain. Both Windows and Linux are tested.
 
-###  on Windows:
+### On Windows
 
 ```
 arm-none-eabi-gcc --version
@@ -49,7 +45,7 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 6. Then follow firmware update instructions as usual but use your new .hex file
 
 
-### on Linux(Ubuntu 18.04):
+### On Linux (Ubuntu 18.04):
 
 ```
 arm-none-eabi-gcc --version
@@ -70,14 +66,33 @@ The MCU of DS213 is STM32F103VET6, with 512kB(0x80000) FLASH. The FLASH layout i
 | FPGA | 0x08070000 | 0x0D800 |
 | LOGO | 0x0807D800 | 8310    |
 
-## Firmware Update Procedure
+## (Legacy) Firmware Update Procedure
 
-1. Enter DS213 DFU mode.
+Full update procedure in case a speedy version below doesn't work
+
+1. Enter DS213 DFU mode (turn power on while holding K1 Play/Pause button)
 2. Copy FPGA_CFG.ADR to DFU disk, Then the DFU disk will restart.
 3. Copy STMU_213_018.bin to DFU disk, Then the DFU disk will restart.
 4. Copy DS213_ECHO_v20.12.25.hex to DFU disk.
 5. Restart DS213.
 
-There are no address information in the .bin file, so we put a .ADR file to DFU disk to setup the firmware start address.
-That's what step 2 did. However, the .hex file contains address information, we don't need a .ADR file.
-If your DS213 is using the official latest firmware, the FPGA is latest 018 version, you can omit step 2 and 3.
+There are no address information in the .bin file, so we put a .ADR file to DFU disk to setup the firmware start addressThat's what step 2 did. However, the .hex file contains address information, we don't need a .ADR file. If your DS213 is using the official latest firmware, the FPGA is latest 018 version, you can omit step 2 and 3.
+
+## Speedy Firmware Update Procedure
+1. Prep: Have file explorer open and `DS213_ECHO.hex` in view and USB connected
+2. Build: `make`
+3. Enter DFU: Hold K1 Play/Pause button and turn off and on
+4. Drag `DS213_ECHO.hex` to newly opened window
+5. Off & On at the moment copy window disappears (no need to wait any longer)
+
+## Hardware and Trivia
+
+- STM32F103VET6 32 bit ARM Cortex-M3 72MHz
+- No FPU
+- 512KB FLASH, 64KB RAM
+- 8 MB memory for waveform data and images
+- Internal 1000 mAh Lithium battery
+- 2.8" Full Color TFT LCD
+- 400x240 resolution
+- 360x200 area for waveform (other area taken by menus)
+- 12x8 grid | dx: 30px/div | dy: 25px/div

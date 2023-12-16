@@ -32,7 +32,7 @@
   }font_map_t;
   //--------------------------- Screen display constant macro definition -----------------------------
 
-  #define WHT        0xFFFF
+  #define WHT        0xFFFF // Colors
   #define CYAN       0xFFE0
   #define CYAN_      0xBDE0
   #define YEL        0x07FF
@@ -47,14 +47,14 @@
   #define ORNG       0x051F
   #define RED        0x001F
   #define BLK        0x0000
-  #define X_SIZE     360
+  #define X_SIZE     360      // Screen width
   #define X_BASE     0
-  #define Y_SIZE     200
+  #define Y_SIZE     200      // Screen height
   #define Y_BASE     0
-  #define MIN_X      11
-  #define MIN_Y      14
-  #define MAX_X      (X_SIZE + MIN_X)
-  #define MAX_Y      (Y_SIZE + MIN_Y)
+  #define MIN_X      11       // Screen left margin
+  #define MIN_Y      14       // Screen bottom margin
+  #define MAX_X      (X_SIZE + MIN_X)  // Screen right margin
+  #define MAX_Y      (Y_SIZE + MIN_Y)  // Screen top margin
 
   //----------------------------------------------------------------------------
 
