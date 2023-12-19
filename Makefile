@@ -174,8 +174,8 @@ LDSCRIPT = STM32F103VCT6_APP.ld
 
 # libraries
 #LIBS = -lc -lm -lnosys
-LIBS = -lm -static
-LIBDIR =
+LIBDIR = -LLibraries/CMSIS/Lib/GCC
+LIBS = -lm -static -larm_cortexM3l_math -lnosys
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
