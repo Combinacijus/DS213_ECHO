@@ -37,7 +37,7 @@
   typedef enum {
     CPA, RNA, CPB, RNB, T3S, T4S, XNP, V_T, TRG, SYN,
     TIM, OUT, FRQ, YNP, V_1, V_2, T_0, T_1, T_2,
-    CAL, TM2, TM1, VM2, VM1, RUN, BTY, ITEM_END,
+    CAL, F_V, TM2, TM1, VM2, VM1, RUN, BTY, ITEM_END,
   } umenu_itemu; // For Menu[Item]
 
   typedef enum {

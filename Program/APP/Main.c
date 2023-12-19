@@ -77,13 +77,16 @@
                       Fixed the problem that the SaveBuf() and SaveCSV() function calls were stuck.
 
   20.06.24 APP v1.27: Modified the ADC calibration parameters of MXT2088, and corrected the display error of the calculated value when the attenuation is 10 times.
+  
+  
+  [TODO WORK IN PROGRESS] 24.12.18 APP v1.28: FFT spectrum analyzer
 *******************************************************************************/
 #include "Sys.h"
 #include "DS213Bios.h"
 
 
 HwDrvDef  Hw;
-u8  APP_VERSION[12] = { "v20.11.27" };
+u8  APP_VERSION[12] = { "v20.11.28" };
 u8  PwrDownSt = 0;
 
 /*******************************************************************************
@@ -114,8 +117,10 @@ int main(void)
   */
 /******************************************************************************/
 
-  DispStr(12*8, 90, WHT, CHAR, "Oscilloscope APP");
-  DispStr(29*8, 90, WHT, CHAR,  APP_VERSION );
+  DispStr(6*8,  90, WHT, CHAR, "Oscilloscope APP");
+  DispStr(23*8, 90, WHT, CHAR,  APP_VERSION );
+  DispStr(33*8, 90, WHT, CHAR,  "(Open Source)" );
+  DispStr(15*8, 70, WHT, CHAR,  "Github: DS213_ECHO" );
 
   Hw.pDevInit(USBDISK);
   Hw.pDevInit(USB_DEV);

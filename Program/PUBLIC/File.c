@@ -108,8 +108,8 @@ u8 LoadParam(void)
   if(PARAM_VER !=(*p & 0xFF)) return VER_ERR;               // Version does not match
   for(u32 i = 0; i < 512; i++) Sum += FileBuf[i];
   if(Sum != 0) return SUM_ERR;                              // Checksum error
-  Item = *p++ >> 8;                                         // load Curr Item
-  for(u32 i = 0; i < ITEM_END; i++){                        // load Menu
+  Item = *p++ >> 8;                                         // Load Curr Item
+  for(u32 i = 0; i < ITEM_END; i++){                        // Load Menu
     Menu[i].Val = *p++, Menu[i].Src = *p >> 8;
     Menu[i].Flg = (u8)(*p++ | UPDT);                        // Refresh all
   }
@@ -121,7 +121,7 @@ u8 LoadParam(void)
   }
   Slope[CH_A] = *p++, Slope[CH_B] = *p++;                   // Load slope correction factor
 
-  for(u32 i = 0; i < 4; i++){                               // oad position parameters
+  for(u32 i = 0; i < 4; i++){                               // Load position parameters
     Vt[i] = *p >> 8, Yn[i] = 0xFF & *p++;
   }
   for(u32 i = 0; i < (SPDT-3); i++) Pop[SVOL+i].Val = *p++; // Load volume and backlight

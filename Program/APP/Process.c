@@ -5,6 +5,10 @@
 #include "DS213Bios.h"
 #include "Sys.h"
 
+#define ARM_MATH_CM3  // Define microcontroller core version for arm_math.h
+#include "arm_math.h"
+
+
 void Y_Measure(void);
 void RmsMeasure(u8 ChN);
 void TimMeasure(u8 ChN);
@@ -157,6 +161,12 @@ void DispDebugStr(void)
   RowPosi(Menu[TM2].X0, Menu[TM2].Y0);
   AddStr(TXT2C, CHAR, gDebugBuf);
 }
+void DispDebugStr2(u16 val, u8 offset)
+{
+  u16To5DecStr(gDebugBuf, val);
+  RowPosi(Menu[TM2].X0, Menu[TM2].Y0+offset*13);
+  AddStr(TXT2C, CHAR, gDebugBuf);
+}
 
 // Wave scroll processing
 void WaveFormRoll(u16 pos)
@@ -204,6 +214,95 @@ void DispSync(void)
           Npts = WaveFormExtract(ViewP);             // Extract from the specified window position
         }
       }
+
+
+
+
+      // TODO FFT --------------------------------------------------------------------------------------
+
+      #define FFT_LEN 512  // TODO change // Supported FFT Lengths are 32, 64, 128, 256, 512, 1024, 2048.
+      // const u16 fft_len = 64;  
+      float32_t FFTin[FFT_LEN];
+      float32_t FFTout[FFT_LEN];
+      float32_t FFTmag[FFT_LEN / 2];
+      float32_t FFTmag2[FFT_LEN / 2];
+
+
+      for (int i = 0; i < FFT_LEN; i++)
+      {
+        FFTin[i] = Track[i*4+1];
+      }
+      
+      arm_rfft_fast_instance_f32 rFFT_S;			//Instance structure for the floating-point RFFT/RIFFT function
+      arm_rfft_fast_init_f32(&rFFT_S, FFT_LEN);
+
+      // void FFT_calculation(void) {
+        float32_t FFTMaxValue;
+        float32_t threshold;
+        uint32_t MaxIndex;
+
+        arm_rfft_fast_f32(&rFFT_S, FFTin, FFTout, 0);	// Direct FFT calculation
+        FFTout[0] = 0; // Remove DC
+        FFTout[1] = 0; // Remove DC
+
+        //Calculate the Magnitude
+        arm_cmplx_mag_f32(FFTout, FFTmag, FFT_LEN / 2);
+
+      u16 min_len = X_SIZE;
+      if (FFT_LEN / 2 < X_SIZE)
+        min_len = FFT_LEN / 2;
+
+      u8 avg = 5;
+      float32_t val = 0;
+      for (int i = 0; i < min_len-avg; i++)
+      {
+        val = 0;
+        for (int j = 0; j < avg-1; j++) val += FFTmag[i + j];      // Avg filter
+        val = val / (float)avg;
+
+        val = 40.0f * val / (float)FFT_LEN * (1.05 + (Menu[F_V].Val - 10) / 10.0f);
+
+        float32_t val2 = val;
+        if (val > 255.0f) val2 = 255.0f;
+        if (val < 0.0f) val2 = 0.0f;
+
+        // Track[4*i+2] = val2;
+        FFTmag2[i] = val;
+      }
+
+      // Interpolate to fill full screen width
+      float* a = FFTmag2;
+      const u16 len_aa = FFT_LEN/2;
+      const u16 len_b = X_SIZE;
+      const u16 a_start = ((float)(Menu[T_1].Val - 2) / 356.0f) * len_aa;
+      const u16 a_end = ((float)(Menu[T_2].Val - 2) / 356.0f) * len_aa;
+      const u16 len_a = abs(a_end - a_start);
+      float32_t scale_factor = (float32_t)(len_a-1) / (float32_t)(len_b-1);
+
+      for (u16 i = 0; i < len_b; ++i) {
+          float32_t index_f = i * scale_factor + a_start;
+          u16 index_low = (u16)index_f;
+          u16 index_high = (index_low + 1 < len_a) ? (index_low + 1) : index_low;
+          float32_t weight_high = index_f - index_low;
+          float32_t weight_low = 1 - weight_high;
+          float32_t val = (u16)(a[index_low] * weight_low + a[index_high] * weight_high);
+
+          if (val > 255.0f) val = 255.0f;
+          if (val < 0.0f) val = 1.0f;
+FFTout[0] = 0; // Remove DC
+          Track[4*i+3] = val;
+      }
+
+
+        DispDebugStr2(a_start, 2);
+        DispDebugStr2(a_end, 3);
+        DispDebugStr2(Menu[F_V].Val, 4);
+
+      // TODO END FFT --------------------------------------------------------------------------------------
+
+
+
+
       DisplayWaveForm();                             // Display the extracted waveform
       MeasureWaveForm();
       if(X_SIZE == Npts){
@@ -276,8 +375,8 @@ u16 WaveFormExtract(u16 Xposn)
   u32 Posn3  = Yn[TRCK3], Posn4 = Yn[TRCK4];          // Waveform trace 3, 4 vertical zero position
 
   s32 i = BASE_KP1[Menu[TIM].Val];                    // Current gear interpolation coefficient
-  u32 n = Menu[T3S].Val;                              // n = 2~7 Corresponding to various operations
-  u32 m = Menu[T4S].Val;                              // m = 2~5 Corresponds to record 0~3
+  u32 n = Menu[T3S].Val;                              // n = 2-7 Corresponding to various operations
+  u32 m = Menu[T4S].Val;                              // m = 2-5 Corresponds to record 0-3
   u8* q = (u8*)&Recod[m-2];
   u32 r = Recod[4*359+m-2];
   u32 x = 0, k, LastA, LastB, LastC, LastD;
@@ -287,7 +386,7 @@ u16 WaveFormExtract(u16 Xposn)
     p = TrackRoll;
   }
 
-  while(1){
+  while(1){                           // Read all samples into p until sample is Empty or sample reaches last screen column
     u32 SmplAC = FPGA_SmplRd(A_C_CH);
     u32 SmplBD = FPGA_SmplRd(B_D_CH);
     u16 Status = SmplAC | SmplBD;
@@ -324,14 +423,14 @@ u16 WaveFormExtract(u16 Xposn)
     #if 1
       s32 DiffA = CurrA-LastA, DiffB = CurrB-LastB;
       s32 DiffC = CurrC-LastC, DiffD = CurrD-LastD;
-      while(k <= 1024){                                // Interpolation
+      while(k <= 1024){                                // Interpolation (not used in all time scales? Look at i and BASE_KP1)
         if(m > 1) q += 4;
         u32 InstA = LastA+DiffA*k/1024, InstB = LastB+DiffB*k/1024;
         *p++ = InstA, *p++ = InstB;
         u32 InstC = LastC+DiffC*k/1024, InstD = LastD+DiffD*k/1024;
         *p++ = InstC, *p++ = InstD;
         k += i;
-        if(++x == X_SIZE) return x;
+        if(++x == X_SIZE) return x;                    // Exit when screen last column is reached
       }
       k -= 1024;
     #else
@@ -358,10 +457,10 @@ void CtrlUpdate(u8 Item)
       }
       break;
     case CPA:
-      *Hw.pOut_A_Coupl = Value & 1, YnHide[TRCK1] = !Value; // If "--" then Hide Trakc#1
+      *Hw.pOut_A_Coupl = Value & 1, YnHide[TRCK1] = !Value; // If "--" then Hide Track#1
       break;
     case CPB:
-      *Hw.pOut_B_Coupl = Value & 1, YnHide[TRCK2] = !Value; // If "--" then Hide Trakc#2
+      *Hw.pOut_B_Coupl = Value & 1, YnHide[TRCK2] = !Value; // If "--" then Hide Track#2
       break;
     case RNA:
       SetRangeA(Value), SetOffsetA(Value, Yn[CH_A]);
@@ -370,10 +469,10 @@ void CtrlUpdate(u8 Item)
       SetRangeB(Value), SetOffsetB(Value, Yn[CH_B]);
       break;
     case T3S:
-      YnHide[TRCK3] = !Value;                    // If "--" then Hide Trakc#3
+      YnHide[TRCK3] = !Value;                    // If "--" then Hide Track#3
       break;
     case T4S:
-      YnHide[TRCK4] = !Value;                    // If "--" then Hide Trakc#4
+      YnHide[TRCK4] = !Value;                    // If "--" then Hide Track#4
       break;
     case YNP:
     case CAL:
@@ -413,5 +512,14 @@ void CtrlUpdate(u8 Item)
       break;
   }
   SetTriggTyp(isSynRoll() ? TRIG_TYPE_ANY : Menu[TRG].Val, Menu[V_T].Src);
+}
+
+/*******************************************************************************
+  Dummy Functions:
+*******************************************************************************/
+int *__errno(void) {
+    // Provide a dummy implementation of __errno (needed for CMSIS DSP FFT Library to work)
+    static int dummy_errno;
+    return &dummy_errno;
 }
 /******************************** END OF FILE *********************************/

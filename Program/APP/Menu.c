@@ -109,6 +109,7 @@ uc8  V2P_STR[5]   = "!V2!";                                   // V2 Vernie Str
 uc8  T0P_STR[5]   = "!T0!";                                   // Presampling Depth
 uc8  T1P_STR[5]   = "!T1!";                                   // T1 Vernie Str
 uc8  T2P_STR[5]   = "!T2!";                                   // T2 Vernie Str
+uc8  FVT_STR[5]   = "!FV!";                                   // FFT Vertical Scale
 uc8  V_UNIT[][5]  = {"uV", "mV", "V ", "--"};
 uc8  T_UNIT[][5]  = {"!nS!", "!uS!", "!mS!", " S ", "---"};
 uc8  F_UNIT[][5]  = {"!Hz!", "kHz",  "MHz", "---"};
@@ -127,17 +128,17 @@ u8   PopUpdt = 0;
 //=================+=====+=====+=====+=====+=====+=====+=====+=====+=====+=====+
 // Offset error correction    | 10mv| 20mv| 50mv| 0.1v| 0.2v| 0.5v|  1v |  2v |  5v | 10v |
 //=================+=====+=====+=====+=====+=====+=====+=====+=====+=====+=====+
-u16 Diff[][10] =  {{ 436,  407,  390,  386,  383,  411,  395,  387,  384,  386},
-                   { 421,  406,  396,  392,  391,  419,  404,  396,  393,  394}};
+u16 Diff[][10] =             {{ 436,  407,  390,  386,  383,  411,  395,  387,  384,  386},
+                              { 421,  406,  396,  392,  391,  419,  404,  396,  393,  394}};
 //=================+=====+=====+=====+=====+=====+=====+=====+=====+=====+=====+
 // Gain error correction    | 10mv| 20mv| 50mv| 0.1v| 0.2v| 0.5v|  1v |  2v |  5v | 10v |
 //=================+=====+=====+=====+=====+=====+=====+=====+=====+=====+=====+
-u16 Gain0[][10] = {{1143, 1126, 1092, 1088, 1041, 1126, 1109, 1104, 1098, 1056},
-                   {1143, 1126, 1109, 1088, 1041, 1126, 1109, 1109, 1136, 1040}};
-u16 Gain1[][10] = {{1054, 1044, 1044, 1057, 1021, 1071, 1067, 1063, 1059, 1038},
-                   {1061, 1066, 1050, 1063, 1028, 1076, 1067, 1078, 1059, 1024}};
-u16 Gain2[][10] = {{1118, 1105, 1101, 1101, 1056, 1139, 1125, 1127, 1119, 1062},
-                   {1125, 1116, 1110, 1114, 1064, 1154, 1143, 1144, 1142, 1091}};
+u16 Gain0[][10] =           {{1143, 1126, 1092, 1088, 1041, 1126, 1109, 1104, 1098, 1056},
+                             {1143, 1126, 1109, 1088, 1041, 1126, 1109, 1109, 1136, 1040}};
+u16 Gain1[][10] =           {{1054, 1044, 1044, 1057, 1021, 1071, 1067, 1063, 1059, 1038},
+                             {1061, 1066, 1050, 1063, 1028, 1076, 1067, 1078, 1059, 1024}};
+u16 Gain2[][10] =           {{1118, 1105, 1101, 1101, 1056, 1139, 1125, 1127, 1119, 1062},
+                             {1125, 1116, 1110, 1114, 1064, 1154, 1143, 1144, 1142, 1091}};
 
 //=================+=====+=====+=====+=====+=====+=====+=====+=====+=====+=====+
 u16* pGain; // Hw.pAdcTypStr == AD9288->Gain0, HW9288->Gain1, MXT2088->Gain2
@@ -146,8 +147,8 @@ u16 Slope[2]   =  { 2157, 2157,}; // Slope correction factor
 
 u16 Vt[4] = {160, 80, 51, 21};
 u16 Yn[4] = {150, 75, 50, 25};
-u16 Item  = VM1;                  // Limit 0 ~ VM1
-u16 Line  = 0;                    // Limit 0 ~ 10  The current command line in the pop-up window
+u16 Item  = VM1;                  // Limit 0 - VM1
+u16 Line  = 0;                    // Limit 0 - 10  The current command line in the pop-up window
 
 uimenu Pop[]   = {//........ Val, Src, Flag Working parameters that can be saved and read out
 //==============+====+====+====+====+=====+======+===================+
@@ -157,7 +158,7 @@ uimenu Pop[]   = {//........ Val, Src, Flag Working parameters that can be saved
   {&FSTR[1][0],    5, 112,   0,  999,   0, CNUM1,      FNUM+LOOP+UPDT},// [LWAV]
   {&FSTR[2][0],    5,  97,   0,  999,   0, CNUM1,      FNUM+LOOP+UPDT},// [SBUF]
   {&FSTR[3][0],    5,  82,   0,  999,   0, CNUM1,      FNUM+LOOP+UPDT},// [SCSV]
-  {&VOLUME[0],     5,  67,   0,  100,  50, CNUM3,      PCNT+    +UPDT},// [SVOL]
+  {&VOLUME[0],     5,  67,   0,  100,   1, CNUM3,      PCNT+    +UPDT},// [SVOL]
   {&BKLGHT[0],     5,  53,  10,  100,  50, CNUM3,      PCNT+    +UPDT},// [SBKL]
   {&STANDBY[0],    5,  37,   0,   60,   2, CNUM3,      TCNT+    +UPDT},// [SPDT]
   {&TIP1[0][0],    5,  19,   0,    0,   0, CNUM2,      PCNT+    +UPDT},
@@ -166,6 +167,7 @@ uimenu Pop[]   = {//........ Val, Src, Flag Working parameters that can be saved
 };
 
 uimenu Menu[] = {//......... Val, Src, Flag Working parameters that can be saved and read out
+// [x0 = 0 -> Left] [y0 = 0 -> Bottom] [>= <= min max value range]
 //==============+====+====+====+====+=====+======+===================+
 //|     pStr    | x0 | y0 | >= | <= | Val |  Src |       Flag        |
 //==============+====+====+====+====+=====+======+===================+
@@ -175,9 +177,9 @@ uimenu Menu[] = {//......... Val, Src, Flag Working parameters that can be saved
   {(u8*)V_RANGE,  73, 215,   0,   9,    6, TRCK2, SLCT+          UPDT}, // [RNB]: Channel B Range
 //--------------+----+----+----+----+-----+------+-------------------+
   {(u8*)TRACK_3, 109, 228,   0,   7,    1, TRCK3, SLCT+LOOP+INVR+UPDT}, // [T3S]: Track 3 Source
-  {(u8*)TRACK_4, 153, 228,   0,   5,    1, TRCK4, SLCT+LOOP+INVR+UPDT}, // [T4S]: Track 4 source
+  {(u8*)TRACK_4, 153, 228,   0,   5,    1, TRCK4, SLCT+LOOP+INVR+UPDT}, // [T4S]: Track 4 Source
   {(u8*)Xn_POSN, 197, 228,   0, 123,    0, XATTR,           INVR+UPDT}, // [XNP]: View Window ptr 0~136 Grid
-  {(u8*)VTP_STR, 233, 228,   5, 195, VOID, TRCK2,      LOOP+INVR+UPDT}, // [V_T]: CH A~B Trigger threshold
+  {(u8*)VTP_STR, 233, 228,   5, 195, VOID, TRCK2,      LOOP+INVR+UPDT}, // [V_T]: CH A~B Trigger Threshold
   {(u8*)TRIGTYP, 269, 228,   0,   7,    0, TRCK2, SLCT+LOOP+INVR+UPDT}, // [TRG]: CH A~D Trigger Type
 //--------------+----+----+----+----+-----+------+-------------------+
   {(u8*)SYNCTYP, 305, 228,   0,   3,    0, XATTR, SLCT+LOOP+INVR+UPDT}, // [SYN]: Sync Mode
@@ -192,6 +194,8 @@ uimenu Menu[] = {//......... Val, Src, Flag Working parameters that can be saved
   {(u8*)T1P_STR, 376,  92,   2, 358,   90, TXT1C,                UPDT}, // [T_1]: T1 Cursor
   {(u8*)T2P_STR, 376,  76,   2, 358,  120, TXT1C,                UPDT}, // [T_2]: T2 Cursor
   {(u8*)CALIBRA, 376,  60, 350, 480,  400, TRCK1,           INVR+UPDT}, // [CAL]: CH A~B Offset Calibration
+
+  {(u8*)FVT_STR, 376,  44,   1,   20,   1, TXT1C,                UPDT}, // [F_V]: FFT Vertical Scale
 //--------------+----+----+----+----+-----+------+-------------------+
   {(u8*)TXMETER, 300,   0,   0,   6,    0, TRCK2, SLCT+LOOP+INVR+UPDT}, // [TM2]: Measure F & T
   {(u8*)TXMETER, 200,   0,   0,   6,    3, TRCK3, SLCT+LOOP+INVR+UPDT}, // [TM1]: Measure F & T

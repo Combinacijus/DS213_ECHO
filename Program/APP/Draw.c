@@ -431,8 +431,8 @@ void DisplayWaveForm(void)
   u16 VtF = Menu[V_T].Flg & INVR;                // Vt Cursor display flag
 
   FpsCnt++;
-  LCD_WrBlock(MIN_X, MIN_Y, MIN_X+X_SIZE, MIN_Y+Y_SIZE);          // Set display area
-  for(u32 Col = X_BASE; Col <= X_SIZE; Col++){                    // Iterate through each column
+  LCD_WrBlock(MIN_X, MIN_Y, MIN_X+X_SIZE, MIN_Y+Y_SIZE);          // Set display waveform area
+  for(u32 Col = X_BASE; Col <= X_SIZE; Col++){                    // Iterate through each waveform area column
     u16* p = (Col & 1) ? Buf1 : Buf0;                             // Switch pixel buffer
 
     u32* p32 = (u32*)p;                                           // u32 for quicker background color filling
@@ -445,8 +445,8 @@ void DisplayWaveForm(void)
 
     if(Col != X_BASE && Col != X_SIZE){
       for(u32 ch = 0; ch < 4; ch++){
-        u32 m = Col*4+ch;        // Sample position
-        const u32 m_prev = m-4;  // Previous sample
+        u32 m = Col*4+ch;        // Sample index
+        const u32 m_prev = m-4;  // Previous sample index
         u32 Max[4], Min[4];      // Min Max only comparing current and previous sample (for vertical line drawing)
         if(Track[m] != 0xFF){                                     // Non-blanking state
 
@@ -462,7 +462,7 @@ void DisplayWaveForm(void)
             else if(Track[m] < Track[m_prev] && Track[m_prev] != 0xFF)
               Max[ch] = Track[m_prev];
             
-            // Bold horizontal line for constant no signal
+            // Bold horizontal line for constant signal
             // if(Min[ch] == Max[ch]){
             //   if(Min[ch] > Y_BASE+1) Min[ch]--;
             //   if(Max[ch] < Y_SIZE-1) Max[ch]++;                     
@@ -477,10 +477,10 @@ void DisplayWaveForm(void)
             }
           }
           u16 TrkC = Palette[ch];
-          if((Max[ch]-Min[ch]) > 5) TrkC &= 0xBDF7;                 // Brightness adjustment
+          if((Max[ch]-Min[ch]) > 5) TrkC &= 0xBDF7;                  // Brightness adjustment
           if(Col != X_BASE && Col != X_SIZE && !YnHide[ch]){
-            for(u32 y = Min[ch]; y <= Max[ch]; y++){                // Draw vertical line between two samples (so it's continuous line)
-              if(Min[ch] > Y_BASE && Max[ch] < Y_SIZE) p[y] |= TrkC;// Draw waveform trace
+            for(u32 y = Min[ch]; y <= Max[ch]; y++){                 // Draw vertical line between two samples (so it's continuous line)
+              if(Min[ch] > Y_BASE && Max[ch] < Y_SIZE) p[y] |= TrkC; // Draw waveform trace
             }
           }
         }

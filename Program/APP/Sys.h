@@ -40,7 +40,7 @@
   #define MAX_SEC_SIZE     4096
 
   #define CALIBRAT(k, n)  (((k)*(n)+512)/1024)
-  #define CALIBRATE(n, k) (((n)*(k)+512)/1024)
+  #define CALIBRATE(n, k) (((n)*(k)+512)/1024)  // +512 to force int div to round(x) instead of floor(x)
 
   #define ENC1a           0x1000
   #define ENC1b           0x2000
