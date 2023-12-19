@@ -12,6 +12,17 @@ begin displaying results rather than waiting the full 10 seconds.
 - [Youtube](https://youtu.be/iGE-QNMqRk0)
 - [Bilibili](https://www.bilibili.com/video/BV1QA411x7YX)
 
+## DS213 FFT Spectrum Analyzer Firmware (Work in Progress)
+For testing you can try updating to: [./Release/DS213_ECHO_v20.11.28_FFT.hex](./Release/DS213_ECHO_v20.11.28_FFT.hex)
+
+**Note**: Config backup (.RPM and .BAK files) has to be removed because menu element was added and old config is not valid. Same with downgrading from this firmware. You can save .RPM and .BAK on your computer for later in case of downgrade or those files can be deleted so all settings will go to default values.
+
+FFT Features:
+- Enable CH(D) to display FFT spectrum.
+- Scroll right side FV element to zoom vertically.
+- T1 and T2 slices spectrum to show only selected range. To show full spectrum slide T1 fully to the left and T2 to the right.
+- Spectrum parameters: F1 - start frequency, Fdiv - frequency/div, F2 - end frequency
+
 ## Toolchain
 
 The firmware is built on GNU Arm Embedded Toolchain. Both Windows and Linux are tested.
