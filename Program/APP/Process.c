@@ -24,6 +24,31 @@ u32  gDebug = 0;
 u8   gDebugBuf[8] = {0};
 u16  posLast = 0;
 
+u32 SAMPLE_FREQ[] = {
+    30,         // 1S
+    60,         // 500mS
+    150,        // 200mS
+    300,        // 100mS
+    600,        // 50mS
+    1500,       // 20mS
+    3000,       // 10mS
+    6000,       // 5mS
+    15000,      // 2mS
+    30000,      // 1mS
+    60000,      // 500uS
+    150000,     // 200uS
+    300000,     // 100uS
+    600000,     // 50uS
+    1500000,    // 20uS
+    3000000,    // 10uS
+    6000000,    // 5uS
+    15000000,   // 2uS
+    30000000,   // 1uS
+    60000000,   // 500nS
+    150000000,  // 200nS
+    300000000,  // 100nS
+};
+
 /*******************************************************************************
   The maximum and minimum values of each waveform in the statistical display window, the unit is the number of Y coordinate points
 *******************************************************************************/
@@ -161,11 +186,17 @@ void DispDebugStr(void)
   RowPosi(Menu[TM2].X0, Menu[TM2].Y0);
   AddStr(TXT2C, CHAR, gDebugBuf);
 }
-void DispDebugStr2(u16 val, u8 offset)
+void DispNum(u16 val, u16 offX, u16 offY)
 {
   u16To5DecStr(gDebugBuf, val);
-  RowPosi(Menu[TM2].X0, Menu[TM2].Y0+offset*13);
+  RowPosi(Menu[TM2].X0+offX, Menu[TM2].Y0+offY);
   AddStr(TXT2C, CHAR, gDebugBuf);
+}
+
+void DispStr2(u8 str[], u16 offX, u16 offY)
+{
+  RowPosi(Menu[TM2].X0+offX, Menu[TM2].Y0+offY);
+  AddStr(TXT2C, CHAR, str);
 }
 
 // Wave scroll processing
@@ -220,12 +251,12 @@ void DispSync(void)
 
       // TODO FFT --------------------------------------------------------------------------------------
 
-      #define FFT_LEN 512  // TODO change // Supported FFT Lengths are 32, 64, 128, 256, 512, 1024, 2048.
+      #define FFT_LEN 512 // Supported FFT Lengths are 32, 64, 128, 256, 512, 1024, 2048. Limited by what's displayed on screen (360 -> 512/2)
       // const u16 fft_len = 64;  
       float32_t FFTin[FFT_LEN];
       float32_t FFTout[FFT_LEN];
       float32_t FFTmag[FFT_LEN / 2];
-      float32_t FFTmag2[FFT_LEN / 2];
+      float32_t FFTmagscaled[FFT_LEN / 2];
 
 
       for (int i = 0; i < FFT_LEN; i++)
@@ -264,14 +295,14 @@ void DispSync(void)
 
         float32_t val2 = val;
         if (val > 255.0f) val2 = 255.0f;
-        if (val < 0.0f) val2 = 0.0f;
+        if (val < 1.0f) val2 = 1.0f;
 
         // Track[4*i+2] = val2;
-        FFTmag2[i] = val;
+        FFTmagscaled[i] = val;  // FFT magnitude scaled to screen 
       }
 
       // Interpolate to fill full screen width
-      float* a = FFTmag2;
+      float* a = FFTmagscaled;
       const u16 len_aa = FFT_LEN/2;
       const u16 len_b = X_SIZE;
       const u16 a_start = ((float)(Menu[T_1].Val - 2) / 356.0f) * len_aa;
@@ -288,22 +319,57 @@ void DispSync(void)
           float32_t val = (u16)(a[index_low] * weight_low + a[index_high] * weight_high);
 
           if (val > 255.0f) val = 255.0f;
-          if (val < 0.0f) val = 1.0f;
-FFTout[0] = 0; // Remove DC
+          if (val < 1.0f) val = 1.0f;
+
           Track[4*i+3] = val;
       }
+         
 
 
-        DispDebugStr2(a_start, 2);
-        DispDebugStr2(a_end, 3);
-        DispDebugStr2(Menu[F_V].Val, 4);
+
+        const u8 div_num = 12;
+        u32 fft_freq_max = SAMPLE_FREQ[Menu[TIM].Val] / 2.0f;
+        u32 fft_freq_start = fft_freq_max * a_start / len_aa;
+        u32 fft_freq_end = fft_freq_max * a_end / len_aa;
+        u32 fft_freq_div = (fft_freq_end - fft_freq_start) / div_num;
 
       // TODO END FFT --------------------------------------------------------------------------------------
 
 
-
-
       DisplayWaveForm();                             // Display the extracted waveform
+
+      
+        char suffix[] = " Hz";
+        if (fft_freq_end < 10e5)
+        {
+          suffix[0] = ' ';
+          fft_freq_start /= 1.0f;
+          fft_freq_end   /= 1.0f;
+          fft_freq_div   /= 1.0f;
+        } else if (fft_freq_end < 10e8) {
+          suffix[0] = 'k';
+          fft_freq_start /= 10e3;
+          fft_freq_end   /= 10e3;
+          fft_freq_div   /= 10e3;
+        }
+        else if (fft_freq_end < 10e11) {
+          suffix[0] = 'M';
+          fft_freq_start /= 10e6;
+          fft_freq_end   /= 10e6;
+          fft_freq_div   /= 10e6;
+        }
+
+        DispStr2("  F2:", -8*5, 13*2);
+        DispStr2("Fdiv:", -8*5, 13*3);
+        DispStr2("  F1:", -8*5, 13*4);
+        DispNum(fft_freq_end,   0, 13*2);
+        DispNum(fft_freq_div,   0, 13*3);
+        DispNum(fft_freq_start, 0, 13*4);
+        DispStr2(suffix, 7*6, 13*2);
+        DispStr2(suffix, 7*6, 13*3);
+        DispStr2(suffix, 7*6, 13*4);
+
+
       MeasureWaveForm();
       if(X_SIZE == Npts){
         SmplStart();                                 // Resample
