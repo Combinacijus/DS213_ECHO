@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "STM32",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.19041.0",
+            "compilerPath": "arm-none-eabi-gcc",  // Ideally should be full path
+            "cStandard": "c11",  // Adjust the C standard if needed
+            "cppStandard": "c++17",
+            "intelliSenseMode": "${default}",
+            // "compilerPathInCppPropertiesJson": "arm-none-eabi-gcc",  // Change to the path of your ARM GCC compiler
+            "mergeConfigurations": false,
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/**",
+                    "path/to/stm32/CMSIS/Include",
+                    "path/to/stm32/STM32F10x_SPD/inc"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}
