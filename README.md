@@ -1,5 +1,11 @@
 # DS213_ECHO
 
+
+# !!!!!FLASH IT AT YOUR OWN RISK!!!!!
+FLASHING THIS EXPERIMENTAL FIRMWARE DOESN'T ALWAYS WORK. (Probably you will be able to downgrade but there might be a small chance of something happening)
+## THIS FFT PROJECT IS ABANDONED BY ME
+If someone would want to continue the first good step would be to compile only neccessary newly added FFT and math libraries to make compiled firmware smaller. I think inconsistencies in flashing might be due to big firmware binary
+
 This is a customized DS213 APP firmware with Roll Mode support (and other features). Based on the official app firmware v1.27, and fixed some bugs.
 
 ## What is [Roll Mode](https://www.sweetwater.com/insync/roll-mode/)?
